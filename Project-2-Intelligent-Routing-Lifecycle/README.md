@@ -1,33 +1,38 @@
 # Project 2: Intelligent Ticket Routing & Automation Lifecycle Controller
 
-## 📌 Project Architecture Overview
-In enterprise IT operations management (ITSM), manual triage and assignment of incidents introduce human errors, delay Resolution Times (MTTR), and cause frequent SLA breaches. 
+## 📌 Project Overview
+Manual triage and routing of incoming incidents inside enterprise IT operations introduce human processing errors and delay ticket assignment lifecycles. 
 
-This multi-component automation system focuses on streamlining the ticket lifecycle from instantiation to resolution. It leverages server-side platform scripting (**GlideRecord API**), condition-based transactional interceptors (**Business Rules**), and async cron processing (**Scheduled Jobs**).
+This project configures an automated, server-side data routing matrix using a **ServiceNow Advanced Before Business Rule** to dynamically map assignment teams based on incoming ticket categories.
 
 ---
 
-## 🛠️ Phase A: Intelligent Data-Driven Incident Routing Engine
+## 🛠️ Step-by-Step Configuration Layout
 
-### 1. Objective & Design Pattern
-The core intent is to intercept every inbound incident request at the datastore layer *before* it gets committed to the database. If a record has an active `Category` but lacks an assigned operational team, the script automatically parses standard assignment matrices, maps the target group dynamic reference, and flushes structural parameters without human dispatch intervention.
-
-### 2. Platform Implementation Blueprint
 * **Module Type:** Advanced Business Rule (Server-Side Script)
-* **Execution Boundary:** `Before` transaction on `Insert` operations.
-* **Conditional Optimization:** Executed ONLY when `[Category] [is not empty]` AND `[Assignment Group] [is empty]`. 
+* **Table Target:** `Incident [incident]`
+* **Execution Boundary:** Runs `Before` database transaction on `Insert` operations.
+* **Filter Guards:** Triggers ONLY when `[Category] [is not empty]` AND `[Assignment Group] [is empty]`.
 
-### 3. Core Architectural Script Block
-The system monitors changes on transaction structures using the platform `current` context:
-
+### Core Automated Script Logic
 ```javascript
-// Data-Driven Mapping Engine
-var selectedCategory = current.getValue('category');
+(function executeRule(current, previous) {
+    
+    // Extract dynamic runtime category
+    var selectedCategory = current.getValue('category');
+    
+    // Routing Matrix Integration
+    if (selectedCategory == 'hardware') {
+        current.assignment_group.setDisplayValue('Hardware');
+    } else if (selectedCategory == 'software') {
+        current.assignment_group.setDisplayValue('Software');
+    } else if (selectedCategory == 'network') {
+        current.assignment_group.setDisplayValue('Network');
+    } else if (selectedCategory == 'database') {
+        current.assignment_group.setDisplayValue('Database');
+    }
+    
+    // Audit log trail commit
+    current.work_notes = "Automated routing matrix applied based on Category: " + selectedCategory;
 
-if (selectedCategory == 'hardware') {
-    current.assignment_group.setDisplayValue('Hardware');
-} else if (selectedCategory == 'software') {
-    current.assignment_group.setDisplayValue('Software');
-}
-
-current.work_notes = "Automated routing matrix applied based on Category: " + selectedCategory;
+})(current, previous);
