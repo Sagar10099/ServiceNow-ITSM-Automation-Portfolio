@@ -36,3 +36,33 @@ This project configures an automated, server-side data routing matrix using a **
     current.work_notes = "Automated routing matrix applied based on Category: " + selectedCategory;
 
 })(current, previous);
+
+---
+
+## 🕒 Component B: Lifecycle Automation Controller (Scheduled Job)
+
+### 📌 Component Overview
+To maintain ITIL operational hygiene, resolved incidents that are left inactive by users for more than 7 days must be automatically closed to prevent stagnant records in the system. 
+
+This is achieved using a daily recurring server-side **Scheduled Script Job** utilizing `GlideRecord` queries.
+
+* **Module Type:** Scheduled Script Execution (Scheduled Job)
+* **Execution Interval:** Daily (Runs automatically every night)
+
+### Core Automated Script Logic
+```javascript
+(function executeScheduledJob() {
+    
+    var gr = new GlideRecord('incident');
+    gr.addQuery('state', '6'); // 6 represents Resolved State
+    gr.addEncodedQuery('sys_updated_onRELATIVELT@dayofweek@ago@7'); // Inactive for more than 7 days
+    gr.query();
+
+    while(gr.next()) {
+        gr.state = '7'; // 7 represents Closed State
+        gr.active = false;
+        gr.comments = "Incident automatically closed by system lifecycle automation due to 7 days of user inactivity.";
+        gr.update();
+    }
+
+})();
